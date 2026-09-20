@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cabal Item Check</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AB%B5%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --panel-2:#f6f8fb; --ink:#141b24; --ink-2:#4a5566; --ink-3:#7a8698;
+  --line:#d6dce5; --accent:#1d5fd1; --accent-ink:#ffffff; --focus:#1d5fd1;
+  --fg:#c62839; --fg-bg:#fde8ea; --tr:#c05a00; --tr-bg:#fff0e0; --mm:#8a6a00; --mm-bg:#fff7d1;
+  --du:#1f7a44; --du-bg:#e3f5ea; --mi:#2a5aa8; --mi-bg:#e4eefc; --ok:#1f7a44; --pm:#6b3fa0; --pm-bg:#f0e8fa; --lo:#0b6f86; --lo-bg:#dff3f7;
+  --display:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;
+  --body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141b; --panel:#171e28; --panel-2:#1d2531; --ink:#e7ecf3; --ink-2:#a9b4c4; --ink-3:#7d899b;
+    --line:#2b3544; --accent:#6f9ef0; --accent-ink:#0b1320; --focus:#8fb4f5;
+    --fg:#ff8a95; --fg-bg:#3a1a1f; --tr:#ffb068; --tr-bg:#3a2612; --mm:#f0cf5a; --mm-bg:#332b0e;
+    --du:#6fd49a; --du-bg:#14301f; --mi:#8fb4f5; --mi-bg:#172a45; --ok:#6fd49a; --pm:#c9a6f5; --pm-bg:#2a1f3d; --lo:#6fd3ea; --lo-bg:#123039;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --panel:#171e28; --panel-2:#1d2531; --ink:#e7ecf3; --ink-2:#a9b4c4; --ink-3:#7d899b;
+  --line:#2b3544; --accent:#6f9ef0; --accent-ink:#0b1320; --focus:#8fb4f5;
+  --fg:#ff8a95; --fg-bg:#3a1a1f; --tr:#ffb068; --tr-bg:#3a2612; --mm:#f0cf5a; --mm-bg:#332b0e;
+  --du:#6fd49a; --du-bg:#14301f; --mi:#8fb4f5; --mi-bg:#172a45; --ok:#6fd49a; --pm:#c9a6f5; --pm-bg:#2a1f3d; --lo:#6fd3ea; --lo-bg:#123039;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5}
+.wrap{max-width:1440px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:grid;gap:20px}
+header h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:.01em;margin:0;line-height:1.15;text-wrap:balance}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-start;justify-content:space-between}
+header p{margin:6px 0 0;color:var(--ink-2);max-width:70ch}
+.head-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.langbtn{min-width:44px}
+#themeBtn{min-width:120px}
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.inputs{grid-template-columns:1fr}}
+.zone{background:var(--panel);border:1.5px dashed var(--line);border-radius:10px;padding:18px;display:grid;gap:8px;align-content:start;min-height:132px;outline:none;transition:border-color .15s}
+.zone:focus-visible,.zone.hot{border-color:var(--accent);background:var(--panel-2)}
+.zone h2{font-size:15px;font-weight:600;margin:0}
+.zone p{margin:0;color:var(--ink-2);font-size:13px}
+.zone kbd{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px}
+.btn{font:inherit;font-weight:600;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);justify-self:start}
+.btn:focus-visible,.chip:focus-visible,summary:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sources{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--ink-2);font-size:13px}
+.sources{display:grid;gap:8px}
+.srcrow,.tabpick{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.sources .lbl{min-width:64px;color:var(--ink-2)}
+.tabchip{font:inherit;font-size:12.5px;display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--panel);color:var(--ink-3);border-radius:999px;padding:3px 10px;cursor:pointer}
+.tabchip small{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.tabchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tabchip[aria-pressed="true"] small{color:var(--accent-ink);opacity:.8}
+.tabchip.notable{border-style:dashed}
+.tabchip:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.src{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 6px 3px 12px;display:inline-flex;gap:6px;align-items:center}
+.src.example{border-style:dashed}
+.src button{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:15px;line-height:1;padding:2px 6px;border-radius:999px}
+.src button:hover{color:var(--ink);background:var(--panel-2)}
+.summary{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;display:inline-flex;align-items:baseline;gap:8px;border-radius:8px;border:1px solid transparent;padding:8px 14px;cursor:pointer;background:var(--panel);color:var(--ink-2)}
+.chip b{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.chip[aria-pressed="false"]{opacity:.45}
+.chip.fg{background:var(--fg-bg)} .chip.fg b{color:var(--fg)}
+.chip.tr{background:var(--tr-bg)} .chip.tr b{color:var(--tr)}
+.chip.mm{background:var(--mm-bg)} .chip.mm b{color:var(--mm)}
+.chip.du{background:var(--du-bg)} .chip.du b{color:var(--du)}
+.chip.mi{background:var(--mi-bg)} .chip.mi b{color:var(--mi)}
+.chip.pm{background:var(--pm-bg)} .chip.pm b{color:var(--pm)}
+.chip.lo{background:var(--lo-bg)} .chip.lo b{color:var(--lo)}
+.pill.lo{background:var(--lo-bg);color:var(--lo)}
+tr.row-lo td:first-child{box-shadow:inset 3px 0 var(--lo)}
+.pill.pm{background:var(--pm-bg);color:var(--pm)}
+tr.row-pm td:first-child{box-shadow:inset 3px 0 var(--pm)}
+.export{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.export .msg{font-size:12.5px;color:var(--ink-3)}
+.meta{color:var(--ink-3);font-size:13px;align-self:center;margin-left:auto}
+.results{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:1150px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600;background:var(--panel-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num,td.cell{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.cell{color:var(--ink-2)}
+td.name{font-weight:500;min-width:190px}
+td.why{color:var(--ink-2);font-size:13px;min-width:200px}
+td.tab{font-size:13px;color:var(--ink-2);min-width:150px;max-width:200px}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;border-radius:4px;padding:1px 7px;margin:0 4px 3px 0;white-space:nowrap}
+.pill.fg{background:var(--fg-bg);color:var(--fg)} .pill.tr{background:var(--tr-bg);color:var(--tr)}
+.pill.mm{background:var(--mm-bg);color:var(--mm)} .pill.du{background:var(--du-bg);color:var(--du)}
+.pill.mi{background:var(--mi-bg);color:var(--mi)}
+tr.row-fg td:first-child{box-shadow:inset 3px 0 var(--fg)} tr.row-tr td:first-child{box-shadow:inset 3px 0 var(--tr)}
+tr.row-mm td:first-child{box-shadow:inset 3px 0 var(--mm)} tr.row-du td:first-child{box-shadow:inset 3px 0 var(--du)}
+tr.row-mi td:first-child{box-shadow:inset 3px 0 var(--mi)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.toolbar .hint{margin:0;color:var(--ink-3);font-size:12.5px;flex:1 1 280px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:var(--panel);color:var(--ink-2);padding:6px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.btn.small{font-size:12px;padding:4px 10px;white-space:nowrap}
+.chip small{font-size:11.5px;color:var(--ink-3);margin-left:2px}
+td.found{min-width:170px;max-width:260px}
+td.found .count{font-family:var(--mono);font-size:13px;font-weight:500}
+td.found .count span{font-family:var(--body);font-weight:400;color:var(--ink-3);font-size:12px}
+td.found .refs{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.ref{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:0 5px;cursor:help}
+.alt{font-size:12px;color:var(--ink-3);font-weight:400;margin-top:2px}
+tr.is-ignored td{opacity:.5}
+.empty{padding:28px 16px;color:var(--ink-2);text-align:center}
+.empty.ok{color:var(--ok);font-weight:600}
+.err{background:var(--fg-bg);color:var(--fg);border-radius:8px;padding:10px 14px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0 16px}
+summary{cursor:pointer;padding:12px 0;font-weight:600}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-bottom:16px}
+@media (max-width:760px){.settings{grid-template-columns:1fr}}
+.settings label{display:grid;gap:4px;font-size:13px;color:var(--ink-2)}
+.settings textarea{font-family:var(--mono);font-size:13px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;min-height:96px;resize:vertical;width:100%}
+.settings .row{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.rules{color:var(--ink-2);font-size:13px;padding-bottom:16px;display:grid;gap:4px}
+.rules p{margin:0;max-width:95ch}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="head-text">
+      <h1>Cabal Item Check</h1>
+      <p data-i18n="page.sub"></p>
+    </div>
+    <div class="head-ctl">
+      <div class="seg" role="group" aria-label="Language / ภาษา">
+        <button type="button" class="langbtn" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" class="langbtn" data-lang="th" aria-pressed="false">TH</button>
+      </div>
+      <button type="button" class="btn small" id="themeBtn">Theme: Auto</button>
+    </div>
+  </header>
+
+  <section class="inputs" aria-label="Add a sheet">
+    <div class="zone" id="pasteZone" tabindex="0" aria-label="Paste cells here">
+      <h2 data-i18n="paste.h"></h2>
+      <p data-i18n="paste.p1"></p>
+      <p data-i18n="paste.p2"></p>
+    </div>
+    <div class="zone" id="dropZone" tabindex="0" aria-label="Drop a file here">
+      <h2 data-i18n="drop.h"></h2>
+      <p data-i18n="drop.p"></p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.ods" multiple hidden>
+      <button class="btn primary" id="pickBtn" type="button" data-i18n="drop.btn"></button>
+    </div>
+  </section>
+
+  <div class="sources" id="sources" aria-live="polite"></div>
+  <div id="errBox" class="err" hidden></div>
+
+  <section class="summary" id="summary" aria-label="Filter by flag"></section>
+
+  <section class="results">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="viewUnique" aria-pressed="true" data-i18n="view.unique"></button>
+        <button type="button" id="viewRows" aria-pressed="false" data-i18n="view.rows"></button>
+      </div>
+      <p class="hint" data-i18n="view.hint"></p>
+      <button type="button" class="btn small" id="ignoredToggle" hidden>Show ignored</button>
+      <button type="button" class="btn small" id="clearIgnored" hidden data-i18n="ign.clear"></button>
+      <div class="export">
+        <button type="button" class="btn small" id="exportCsv" data-i18n="exp.csv"></button>
+        <button type="button" class="btn small" id="copyTsv" data-i18n="exp.copy"></button>
+        <span class="msg" id="exportMsg" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="emptyMsg" class="empty" hidden></div>
+  </section>
+
+  <details id="settingsBox">
+    <summary data-i18n="rules.sum"></summary>
+    <div class="rules" data-i18n="rules.body"></div>
+    <div class="settings">
+      <label for="kwInput" data-i18n-label="set.kw">Force Gem name keywords
+        <textarea id="kwInput" spellcheck="false"></textarea></label>
+      <label for="idxInput" data-i18n-label="set.idx">Force Gem Item Index values
+        <textarea id="idxInput" spellcheck="false"></textarea></label>
+      <div class="row">
+        <button class="btn primary" id="saveSettings" type="button" data-i18n="set.apply"></button>
+        <button class="btn" id="resetSettings" type="button" data-i18n="set.reset"></button>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+const DEFAULT_KW = ['/force\\s*[-_]?\\s*gems?/i','/\\bf\\.?\\s*gems?\\b/i','/\\bfg\\s*[x×]?\\s*\\d/i','/ฟ(อ|อร์|อส|อซ|อร์ซ)\\s*เจ(ม|็ม)/'];
+const DEFAULT_IDX = ['33555215'];
+const LIMITED_ORB = [/limited\s*[-_]?\s*orbs?/i, /ลิมิ?เ?ต็?ด\s*ออ(ร์|ร)?บ/];
+const DURATION_TEXT = {0:'ถาวร',1:'1 ชั่วโมง',2:'2 ชั่วโมง',3:'3 ชั่วโมง',4:'4 ชั่วโมง',5:'5 ชั่วโมง',6:'6 ชั่วโมง',7:'10 ชั่วโมง',8:'12 ชั่วโมง',9:'1 วัน',10:'3 วัน',11:'5 วัน',12:'7 วัน',13:'10 วัน',14:'14 วัน',15:'15 วัน',16:'20 วัน',17:'30 วัน',18:'45 วัน',19:'60 วัน',20:'90 วัน',21:'100 วัน',22:'120 วัน',23:'180 วัน',24:'270 วัน',25:'365 วัน',26:'3 นาที',27:'30 นาที',28:'90 นาที',29:'10 นาที'};
+const HEADER_ALIASES = {
+  kind:['itemkind','kind','itemkindid'],
+  index:['itemindex','index','itemidx','idx','itemid'],
+  option:['itemoption','option','itemopt','opt'],
+  duration:['durationindex','duration','durationidx','itemduration','dur','duridx'],
+  durText:['ระยะเวลา','durationtext','period'],
+  stack:['stackable','stack'],
+  name:['displayname','itemname','name','ชื่อไอเทม','ชื่อitem','ชื่อ'],
+  amt:['amt','amount','qty','quantity','จำนวน'],
+  move:['itemmove','move','tradable','tradeable','trade','เทรด','เทรดได้']
+};
+const FLAGS = [
+  {key:'FORCE GEM',cls:'fg',label:'Force Gem'},
+  {key:'LIMITED ORB',cls:'lo',label:'Limited Orb'},
+  {key:'TRADABLE',cls:'tr',label:'Tradable'},
+  {key:'MISMATCH',cls:'mm',label:'Wrong Itemmove'},
+  {key:'CROSS',cls:'mm',label:'Differs by table'},
+  {key:'PERMANENT',cls:'pm',label:'Permanent'},
+  {key:'DURATION',cls:'du',label:'Duration'},
+  {key:'MISSING',cls:'mi',label:'Missing ID'}
+];
+const ORDER = Object.fromEntries(FLAGS.map((f,i)=>[f.key,i]));
+const CLS = Object.fromEntries(FLAGS.map(f=>[f.key,f.cls]));
+
+let kwPatterns = [], fgIndexes = [];
+let sources = [];            // {id, label, example, sheets:[{name, values, r0, c0}]}
+let active = new Set(FLAGS.map(f=>f.key));
+try{ const a=JSON.parse(localStorage.getItem('ic.active')||'null'); if(Array.isArray(a)&&a.length){ active=new Set(a.filter(k=>FLAGS.some(f=>f.key===k))); FLAGS.forEach(f=>{ if(!(JSON.parse(localStorage.getItem('ic.known')||'[]')).includes(f.key)) active.add(f.key); }); } }catch(e){}
+let nextId = 1;
+
+// ------------------------------------------------ settings
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function toRegex(line){
+  const m=line.match(/^\/(.+)\/([gimsuy]*)$/);
+  try{ return m ? new RegExp(m[1], m[2].replace('g','')) : new RegExp(line.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'); }
+  catch(e){ return null; }
+}
+function applySettings(kwLines, idxLines){
+  kwPatterns = kwLines.map(s=>s.trim()).filter(Boolean).map(toRegex).filter(Boolean);
+  fgIndexes = idxLines.map(s=>Number(String(s).replace(/,/g,'').trim())).filter(n=>!isNaN(n)&&n>0);
+}
+function initSettings(){
+  const kw = load('ic.kw') || DEFAULT_KW, idx = load('ic.idx') || DEFAULT_IDX;
+  document.getElementById('kwInput').value = kw.join('\n');
+  document.getElementById('idxInput').value = idx.join('\n');
+  applySettings(kw, idx);
+}
+document.getElementById('saveSettings').onclick = ()=>{
+  const kw = document.getElementById('kwInput').value.split('\n');
+  const idx = document.getElementById('idxInput').value.split('\n');
+  store('ic.kw', kw.filter(s=>s.trim())); store('ic.idx', idx.filter(s=>s.trim()));
+  applySettings(kw, idx); render();
+};
+document.getElementById('resetSettings').onclick = ()=>{
+  try{localStorage.removeItem('ic.kw');localStorage.removeItem('ic.idx')}catch(e){}
+  initSettings(); render();
+};
+
+// ------------------------------------------------ language (EN / TH)
+const I18N = {
+en:{
+  'page.sub':'Finds Force Gem, Limited Orb, tradable, permanent and suspicious items in any item-code sheet. Tables are found by their header row, so layouts that differ between teams still work. Nothing is uploaded; the check runs in your browser.',
+  'paste.h':'Paste from Google Sheets',
+  'paste.p1':'In the sheet tab press <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>C</kbd>, then click this box and press <kbd>Ctrl</kbd>+<kbd>V</kbd>. Repeat for each tab.',
+  'paste.p2':'Copy from cell A1 (Ctrl+A does this) so the row numbers match the sheet.',
+  'drop.h':'Drop an .xlsx or .csv file',
+  'drop.p':'Google Sheets: <b>File → Download → Microsoft Excel (.xlsx)</b>. Tabs with item tables are ticked automatically; click a tab name to check only the tabs you want.',
+  'drop.btn':'Choose file…',
+  'view.unique':'Unique items','view.rows':'Every row',
+  'view.hint':'Unique items merges rows with the same Item Kind, Index, Option, Duration and Itemmove; hover a cell reference to see its table.',
+  'exp.csv':'Export CSV','exp.copy':'Copy for Sheets',
+  'ign.show':'Show ignored ({n})','ign.hide':'Hide ignored ({n})','ign.clear':'Clear ignore list','ign.btn':'Ignore','ign.restore':'Restore',
+  'rules.sum':'Rules and settings',
+  'rules.body':'<p><b>Force Gem</b> — Display Name matches a keyword below, or Item Index is in the Force Gem index list.</p><p><b>Limited Orb</b> — any row whose name contains Limited Orb (or ลิมิเต็ดออร์บ). Item Kind / Index written as “-” or left blank are treated the same, and no other checks run on these rows.</p><p><b>Tradable</b> — Item Kind = Item Index (the same rule as the sheet\'s <code>=IF(H=I,"Yes","No")</code>). The Itemmove cell is only used when Kind / Index aren\'t numbers.</p><p><b>Wrong Itemmove</b> — the Itemmove cell disagrees with Item Kind / Item Index (e.g. copied Yes onto a bound item). The item itself is judged by its IDs; the cell needs fixing.</p><p><b>Permanent</b> — DurationIndex is 0 (ถาวร), or ระยะเวลา says ถาวร / Permanent when there is no DurationIndex column. Click the Permanent count to hide these; the choice is remembered in this browser.</p><p><b>Duration</b> — DurationIndex is empty, not a whole number, or outside 0–29; ระยะเวลา shows เลขไม่ถูกต้อง / an error; or ระยะเวลา doesn\'t match the DurationIndex (e.g. index 12 = 7 วัน but the cell says 3 วัน).</p><p><b>Differs by table</b> — the same Item Kind + Item Index has a different DurationIndex in another table.</p><p><b>Missing ID</b> — a Display Name without Item Kind / Index, or the other way round.</p><p><b>Table end</b> — an item table stops at two blank rows, the next item header, or a row with words in Item Kind / Item Index (CONDITIONS, CODE ACTIVATION DATE, Prize, Master Code…). Banner rows with only text (e.g. “ทุกครั้งที่ซื้อจะได้ …”) are skipped.</p><p><b>Skipped</b> — other rows whose Item Kind / Index is “-” are not in-game items and are not checked; the count is shown next to the table total.</p><p><b>Ignore</b> — hides an item you already know is fine; the list is saved in this browser only.</p>',
+  'set.kw':'Force Gem name keywords (one per line; plain text, or /regex/)','set.idx':'Force Gem Item Index values (one per line)',
+  'set.apply':'Apply and re-check','set.reset':'Reset to defaults',
+  'flag.FORCE GEM':'Force Gem','flag.LIMITED ORB':'Limited Orb','flag.TRADABLE':'Tradable','flag.MISMATCH':'Wrong Itemmove','flag.CROSS':'Differs by table','flag.PERMANENT':'Permanent','flag.DURATION':'Duration','flag.MISSING':'Missing ID',
+  'src.checking':'Checking:','src.tabs':'Tabs:','src.ofTabs':'{on} of {n} tabs','src.oneTab':'1 tab','src.all':'All','src.none':'None','src.clearAll':'Clear all files','src.remove':'Remove {x}',
+  'src.tabTitle':'{n} item table(s)','src.noTable':'No item table found in this tab','src.pasted':'Pasted tab {n}',
+  'meta':'{t} table(s) · {r} item rows','meta.skip':' · {n} non-item row(s) skipped (Item Kind “-”, not Limited Orb)','chip.rows':'{n} rows',
+  'th.flag':'Flag','th.name':'Display Name','th.kind':'Item Kind','th.index':'Item Index','th.option':'ItemOption','th.dur':'Duration','th.move':'Itemmove','th.found':'Found in','th.why':'Why','th.tab':'Tab','th.cell':'Cell','th.table':'Table',
+  'found.in':'in {n} table(s)','alt':'also named: {x}','tableAt':'table at {x}',
+  'empty.start':'Paste a sheet tab or drop an .xlsx file above to start.','empty.noTab':'No tab selected. Pick at least one tab above.',
+  'empty.noTable':'No item table found. The tool looks for a header row with at least three of: Item Kind, Item Index, ItemOption, DurationIndex, Display Name, Itemmove.',
+  'empty.ok':'No Force Gem, Limited Orb, tradable or suspicious items found in {n} item rows.','empty.ignored':'Everything left is on your ignore list.','empty.filter':'No rows match the selected flags.',
+  'msg.noRows':'Nothing to export: no rows are shown.','msg.noCopy':'Nothing to copy: no rows are shown.','msg.noDl':'Download isn’t available here. Use Copy for Sheets instead.',
+  'msg.saved':'Saved {n} row(s).','msg.cancel':'Download cancelled.','msg.dlFail':'Download failed ({c}). Use Copy for Sheets instead.','msg.downloaded':'Downloaded {n} row(s).',
+  'msg.copied':'Copied {n} row(s). Paste into Google Sheets with Ctrl+V.','msg.copyBlocked':'Copy was blocked by the browser. Use Export CSV instead.',
+  'err.clip':'Nothing to check in the clipboard. Copy the cells in Google Sheets first (Ctrl+A, Ctrl+C), then paste here.',
+  'err.lib':'The spreadsheet reader did not load. Reload the page and try again, or paste the cells instead.','err.read':'Could not read "{f}". Save it as .xlsx or .csv and try again. ({e})',
+  'csv.head':['Flags','Display Name','Item Kind','Item Index','ItemOption','DurationIndex','Duration','Itemmove','Count','Tables','Tab','Cells','Table','Why'],
+  'move.should':'should be {v}','move.byId':'{v} by ID','yes':'Yes','no':'No',
+  'cells1':'cell {r}','cellsN':'cells {r}','at':'{v} at {w}',
+  'n.orbOnly':'Limited Orb (web currency with no Item Kind / Index), so no other checks apply','n.orb':'Limited Orb found',
+  'n.fgBoth':'Name and Item Index both match Force Gem','n.fgName':'Name matches Force Gem','n.fgIdx':'Item Index {idx} is a Force Gem index',
+  'n.trade':'Item Kind = Item Index ({kind}), so the item is tradable','n.tradeCell':'Itemmove cell says {move}',
+  'n.mmYes':'Itemmove {cells}: "{move}", but Item Kind = Item Index, so the item IS tradable. Change to Yes',
+  'n.mmNo':'Itemmove {cells}: "{move}", but Item Kind {kind} ≠ Item Index {index}, so the item is NOT tradable. Change to No',
+  'n.durEmpty':'DurationIndex is empty','n.durBad':'DurationIndex "{d}" is not a valid index (0–29)',
+  'n.perm0':'DurationIndex 0 = permanent (ถาวร)','n.permText':'ระยะเวลา says "{t}"',
+  'n.durText':'DurationIndex {d} means "{want}", but ระยะเวลา says "{got}"','n.durErr':'ระยะเวลา shows "{t}"',
+  'n.missId':'Display Name present but Item Kind / Index is empty','n.missName':'Item Kind / Index present but Display Name is empty',
+  'n.crossDur':'This item has DurationIndex {d} here but {others}. Check which one is right','n.crossMove':'Itemmove is {m} here but {others}. Check which one is right',
+  'theme.auto':'Theme: Auto','theme.light':'Theme: Light','theme.dark':'Theme: Dark','lang.label':'Language'
+},
+th:{
+  'page.sub':'ตรวจหา Force Gem, Limited Orb, ไอเทมเทรดได้, ไอเทมถาวร และจุดผิดปกติในชีตไอเทมโค้ด ตรวจเจอตารางจากแถวหัวตาราง จึงใช้ได้แม้แต่ละทีมจัดชีตไม่เหมือนกัน ไฟล์ไม่ถูกอัปโหลดไปไหน ตรวจในเบราว์เซอร์ของคุณเท่านั้น',
+  'paste.h':'วางจาก Google Sheets',
+  'paste.p1':'ในแท็บชีตกด <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>C</kbd> แล้วคลิกกล่องนี้และกด <kbd>Ctrl</kbd>+<kbd>V</kbd> ทำซ้ำทีละแท็บ',
+  'paste.p2':'คัดลอกตั้งแต่ช่อง A1 (Ctrl+A จะทำให้เอง) เพื่อให้เลขแถวตรงกับในชีต',
+  'drop.h':'ลากไฟล์ .xlsx หรือ .csv มาวาง',
+  'drop.p':'Google Sheets: <b>ไฟล์ → ดาวน์โหลด → Microsoft Excel (.xlsx)</b> แท็บที่มีตารางไอเทมจะถูกเลือกให้อัตโนมัติ คลิกชื่อแท็บเพื่อเลือกเฉพาะแท็บที่ต้องการ',
+  'drop.btn':'เลือกไฟล์…',
+  'view.unique':'ไอเทมไม่ซ้ำ','view.rows':'ทุกแถว',
+  'view.hint':'โหมดไอเทมไม่ซ้ำจะรวมแถวที่ Item Kind, Index, Option, Duration และ Itemmove เหมือนกัน วางเมาส์บนเลขช่องเพื่อดูว่าอยู่ตารางไหน',
+  'exp.csv':'ส่งออก CSV','exp.copy':'คัดลอกไป Sheets',
+  'ign.show':'แสดงรายการที่ข้าม ({n})','ign.hide':'ซ่อนรายการที่ข้าม ({n})','ign.clear':'ล้างรายการที่ข้าม','ign.btn':'ข้าม','ign.restore':'คืนค่า',
+  'rules.sum':'กฎการตรวจและการตั้งค่า',
+  'rules.body':'<p><b>Force Gem</b> — ชื่อไอเทมตรงกับคำค้นด้านล่าง หรือ Item Index อยู่ในรายการ Index ของ Force Gem</p><p><b>Limited Orb</b> — แถวที่ชื่อมีคำว่า Limited Orb (หรือ ลิมิเต็ดออร์บ) ไม่ว่า Item Kind / Index จะใส่ “-” หรือเว้นว่างไว้ ถือว่าเหมือนกัน และไม่ตรวจกฎข้ออื่นกับแถวนี้</p><p><b>เทรดได้</b> — Item Kind = Item Index (กฎเดียวกับสูตร <code>=IF(H=I,"Yes","No")</code> ในชีต) จะใช้ค่าช่อง Itemmove ก็ต่อเมื่อ Kind / Index ไม่ใช่ตัวเลข</p><p><b>Itemmove ผิด</b> — ช่อง Itemmove ไม่ตรงกับ Item Kind / Item Index (เช่น คัดลอก Yes ไปใส่ไอเทมที่ผูกติดตัว) ตัวไอเทมจะตัดสินจาก ID ส่วนช่องนั้นต้องแก้</p><p><b>ถาวร</b> — DurationIndex เป็น 0 (ถาวร) หรือช่องระยะเวลาเขียนว่า ถาวร / Permanent เมื่อไม่มีคอลัมน์ DurationIndex คลิกที่ตัวเลข ถาวร เพื่อซ่อน เบราว์เซอร์จะจำค่าที่เลือกไว้</p><p><b>ระยะเวลาผิดปกติ</b> — DurationIndex ว่าง ไม่ใช่จำนวนเต็ม หรืออยู่นอกช่วง 0–29, ช่องระยะเวลาแสดง เลขไม่ถูกต้อง / error หรือช่องระยะเวลาไม่ตรงกับ DurationIndex (เช่น index 12 = 7 วัน แต่เขียนว่า 3 วัน)</p><p><b>ต่างกันระหว่างตาราง</b> — Item Kind + Item Index เดียวกัน แต่ DurationIndex ไม่ตรงกันในอีกตาราง</p><p><b>ไม่มี ID</b> — มีชื่อไอเทมแต่ไม่มี Item Kind / Index หรือกลับกัน</p><p><b>จุดสิ้นสุดตาราง</b> — ตารางไอเทมจะหยุดเมื่อเจอแถวว่าง 2 แถว หัวตารางไอเทมถัดไป หรือแถวที่มีตัวหนังสือในช่อง Item Kind / Item Index (CONDITIONS, CODE ACTIVATION DATE, Prize, Master Code…) แถวแบนเนอร์ที่มีแค่ข้อความ (เช่น “ทุกครั้งที่ซื้อจะได้ …”) จะถูกข้าม</p><p><b>ข้ามไป</b> — แถวอื่นที่ Item Kind / Index เป็น “-” ไม่ใช่ไอเทมในเกมจึงไม่ตรวจ จำนวนแถวแสดงอยู่ข้างยอดรวมตาราง</p><p><b>ข้าม</b> — ซ่อนไอเทมที่รู้อยู่แล้วว่าไม่มีปัญหา รายการนี้บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น</p>',
+  'set.kw':'คำค้นชื่อ Force Gem (บรรทัดละคำ ใช้ข้อความธรรมดาหรือ /regex/)','set.idx':'Item Index ของ Force Gem (บรรทัดละค่า)',
+  'set.apply':'บันทึกและตรวจใหม่','set.reset':'คืนค่าเริ่มต้น',
+  'flag.FORCE GEM':'Force Gem','flag.LIMITED ORB':'Limited Orb','flag.TRADABLE':'เทรดได้','flag.MISMATCH':'Itemmove ผิด','flag.CROSS':'ต่างกันระหว่างตาราง','flag.PERMANENT':'ถาวร','flag.DURATION':'ระยะเวลาผิดปกติ','flag.MISSING':'ไม่มี ID',
+  'src.checking':'กำลังตรวจ:','src.tabs':'แท็บ:','src.ofTabs':'{on} จาก {n} แท็บ','src.oneTab':'1 แท็บ','src.all':'ทั้งหมด','src.none':'ไม่เลือก','src.clearAll':'ล้างไฟล์ทั้งหมด','src.remove':'นำ {x} ออก',
+  'src.tabTitle':'มีตารางไอเทม {n} ตาราง','src.noTable':'ไม่พบตารางไอเทมในแท็บนี้','src.pasted':'แท็บที่วาง {n}',
+  'meta':'{t} ตาราง · {r} แถวไอเทม','meta.skip':' · ข้าม {n} แถวที่ไม่ใช่ไอเทม (Item Kind “-” ที่ไม่ใช่ Limited Orb)','chip.rows':'{n} แถว',
+  'th.flag':'แฟล็ก','th.name':'ชื่อไอเทม','th.kind':'Item Kind','th.index':'Item Index','th.option':'ItemOption','th.dur':'ระยะเวลา','th.move':'Itemmove','th.found':'พบที่','th.why':'เหตุผล','th.tab':'แท็บ','th.cell':'ช่อง','th.table':'ตาราง',
+  'found.in':'ใน {n} ตาราง','alt':'ชื่ออื่น: {x}','tableAt':'ตารางที่ {x}',
+  'empty.start':'วางแท็บชีต หรือลากไฟล์ .xlsx มาวางด้านบนเพื่อเริ่มตรวจ','empty.noTab':'ยังไม่ได้เลือกแท็บ เลือกอย่างน้อย 1 แท็บด้านบน',
+  'empty.noTable':'ไม่พบตารางไอเทม เครื่องมือจะหาแถวหัวตารางที่มีอย่างน้อย 3 คอลัมน์จาก: Item Kind, Item Index, ItemOption, DurationIndex, Display Name, Itemmove',
+  'empty.ok':'ไม่พบ Force Gem, Limited Orb, ไอเทมเทรดได้ หรือจุดผิดปกติใน {n} แถวไอเทม','empty.ignored':'ที่เหลืออยู่ในรายการข้ามทั้งหมด','empty.filter':'ไม่มีแถวที่ตรงกับแฟล็กที่เลือก',
+  'msg.noRows':'ไม่มีอะไรให้ส่งออก ไม่มีแถวแสดงอยู่','msg.noCopy':'ไม่มีอะไรให้คัดลอก ไม่มีแถวแสดงอยู่','msg.noDl':'ดาวน์โหลดไม่ได้ในหน้านี้ ใช้ คัดลอกไป Sheets แทน',
+  'msg.saved':'บันทึกแล้ว {n} แถว','msg.cancel':'ยกเลิกการดาวน์โหลดแล้ว','msg.dlFail':'ดาวน์โหลดไม่สำเร็จ ({c}) ใช้ คัดลอกไป Sheets แทน','msg.downloaded':'ดาวน์โหลดแล้ว {n} แถว',
+  'msg.copied':'คัดลอกแล้ว {n} แถว วางใน Google Sheets ด้วย Ctrl+V','msg.copyBlocked':'เบราว์เซอร์บล็อกการคัดลอก ใช้ ส่งออก CSV แทน',
+  'err.clip':'คลิปบอร์ดไม่มีข้อมูลให้ตรวจ คัดลอกช่องใน Google Sheets ก่อน (Ctrl+A, Ctrl+C) แล้วมาวางที่นี่',
+  'err.lib':'ตัวอ่านสเปรดชีตโหลดไม่สำเร็จ รีโหลดหน้าแล้วลองใหม่ หรือใช้วิธีวางแทน','err.read':'อ่านไฟล์ "{f}" ไม่ได้ บันทึกเป็น .xlsx หรือ .csv แล้วลองใหม่ ({e})',
+  'csv.head':['แฟล็ก','ชื่อไอเทม','Item Kind','Item Index','ItemOption','DurationIndex','ระยะเวลา','Itemmove','จำนวนครั้ง','จำนวนตาราง','แท็บ','ช่อง','ตาราง','เหตุผล'],
+  'move.should':'ควรเป็น {v}','move.byId':'{v} ตาม ID','yes':'Yes','no':'No',
+  'cells1':'ช่อง {r}','cellsN':'ช่อง {r}','at':'{v} ที่ {w}',
+  'n.orbOnly':'Limited Orb (สกุลเงินบนเว็บ ไม่มี Item Kind / Index) จึงไม่ตรวจกฎข้ออื่น','n.orb':'พบ Limited Orb',
+  'n.fgBoth':'ทั้งชื่อและ Item Index ตรงกับ Force Gem','n.fgName':'ชื่อตรงกับ Force Gem','n.fgIdx':'Item Index {idx} เป็น Index ของ Force Gem',
+  'n.trade':'Item Kind = Item Index ({kind}) ไอเทมนี้จึงเทรดได้','n.tradeCell':'ช่อง Itemmove ระบุว่า {move}',
+  'n.mmYes':'Itemmove {cells}: "{move}" แต่ Item Kind = Item Index แปลว่าไอเทมนี้เทรดได้ ควรแก้เป็น Yes',
+  'n.mmNo':'Itemmove {cells}: "{move}" แต่ Item Kind {kind} ≠ Item Index {index} แปลว่าไอเทมนี้เทรดไม่ได้ ควรแก้เป็น No',
+  'n.durEmpty':'DurationIndex ว่าง','n.durBad':'DurationIndex "{d}" ไม่ใช่ค่าที่ถูกต้อง (0–29)',
+  'n.perm0':'DurationIndex 0 = ถาวร','n.permText':'ช่องระยะเวลาเขียนว่า "{t}"',
+  'n.durText':'DurationIndex {d} คือ "{want}" แต่ช่องระยะเวลาเขียนว่า "{got}"','n.durErr':'ช่องระยะเวลาแสดง "{t}"',
+  'n.missId':'มีชื่อไอเทม แต่ Item Kind / Index ว่าง','n.missName':'มี Item Kind / Index แต่ชื่อไอเทมว่าง',
+  'n.crossDur':'ไอเทมนี้มี DurationIndex {d} ที่นี่ แต่เป็น {others} ตรวจสอบว่าค่าไหนถูก','n.crossMove':'Itemmove เป็น {m} ที่นี่ แต่เป็น {others} ตรวจสอบว่าค่าไหนถูก',
+  'theme.auto':'ธีม: อัตโนมัติ','theme.light':'ธีม: สว่าง','theme.dark':'ธีม: มืด','lang.label':'ภาษา'
+}};
+let lang = (load('ic.lang')==='th')?'th':'en';
+// t('key',{n:2}) — "{x}" fills in values; "(s)" becomes "s" or "" in English based on n
+function t(key,p){
+  let s=(I18N[lang][key]!==undefined?I18N[lang][key]:I18N.en[key]);
+  if(typeof s!=='string') return s;
+  p=p||{};
+  s=s.replace(/\{(\w+)\}/g,(m,k)=>p[k]!==undefined?p[k]:m);
+  const n=p.n!==undefined?p.n:(p.t!==undefined?p.t:undefined);
+  return s.replace(/\(s\)/g, n===1?'':'s');
+}
+const N=(k,p)=>({k,p:p||{}});                    // a note, translated when shown
+function noteText(n,cells){
+  const p=Object.assign({},n.p);
+  if(p.others) p.others=p.others.map(o=>t('at',{v:o.v,w:o.w})).join(' / ');
+  if(cells!==undefined) p.cells=cells;
+  return t('n.'+n.k,p);
+}
+function cellsText(refs){ return t(refs.length>1?'cellsN':'cells1',{r:refs.join(', ')}); }
+function moveText(x){
+  let s=x.moveRaw||'—';
+  if(x.moveFix) s+=' → '+t('move.should',{v:t(x.moveFix)});
+  if(x.moveById) s+=' ('+t('move.byId',{v:t(x.moveById)})+')';
+  return s;
+}
+function flagLabel(k){ return t('flag.'+k); }
+function applyStatic(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.innerHTML=t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-label]').forEach(el=>{
+    const inp=el.querySelector('textarea'); el.firstChild.nodeValue=t(el.dataset.i18nLabel)+' '; if(inp) el.appendChild(inp);
+  });
+  document.querySelectorAll('.langbtn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));
+  updateThemeBtn();
+}
+document.querySelectorAll('.langbtn').forEach(b=>b.onclick=()=>{ lang=b.dataset.lang; store('ic.lang',lang); applyStatic(); render(); });
+
+// ------------------------------------------------ theme (Auto / Light / Dark)
+const hostTheme=document.documentElement.getAttribute('data-theme');   // a host may stamp one; keep it for Auto
+let theme=load('ic.theme')||'auto';
+function applyTheme(){
+  if(theme==='auto'){ if(hostTheme) document.documentElement.setAttribute('data-theme',hostTheme); else document.documentElement.removeAttribute('data-theme'); }
+  else document.documentElement.setAttribute('data-theme',theme);
+  updateThemeBtn();
+}
+function updateThemeBtn(){ const b=document.getElementById('themeBtn'); if(b){ b.textContent=t('theme.'+theme); b.setAttribute('data-mode',theme); } }
+document.getElementById('themeBtn').onclick=()=>{ theme={auto:'light',light:'dark',dark:'auto'}[theme]; store('ic.theme',theme); applyTheme(); };
+applyTheme();
+
+// ------------------------------------------------ scanner
+const norm = v => String(v==null?'':v).toLowerCase().replace(/[\s_\-\.\(\)\[\]:\/]+/g,'');
+const cell = (row,c) => c===undefined||c>=row.length ? '' : String(row[c]==null?'':row[c]).trim();
+const toNum = v => { const s=String(v==null?'':v).replace(/,/g,'').trim(); return s===''||isNaN(Number(s))?null:Number(s); };
+const isPlaceholder = v => /^([-–—_.]+|n\/?a|none|null|x)$/i.test(String(v).trim());
+const yesNo = v => /^(yes|y|true|✓|✔|ได้|เทรดได้|1)$/i.test(v) ? 'YES' : /^(no|n|false|✗|✘|ไม่ได้|0)$/i.test(v) ? 'NO' : '';
+// "7 Days" / "7 วัน" / "Permanent" / "ถาวร" -> one comparable form
+function normDur(t){
+  let s=String(t).toLowerCase().replace(/\s+/g,'');
+  if(/ถาวร|permanent|perm\b/.test(s)) return 'ถาวร';
+  s=s.replace(/days?|วัน/,'d').replace(/hours?|hrs?|ชั่วโมง|ชม\.?/,'h').replace(/minutes?|mins?|นาที/,'m');
+  const m=s.match(/^(\d+)([dhm])$/); return m?m[1]+m[2]:'';
+}
+function colLetter(n){let s='';while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+
+function detectHeaderIn(row, start, end){
+  const cols={};
+  for(let c=start;c<=end&&c<row.length;c++){
+    const key=norm(row[c]); if(!key) continue;
+    for(const f in HEADER_ALIASES){ if(cols[f]!==undefined) continue; if(HEADER_ALIASES[f].includes(key)){cols[f]=c;break;} }
+  }
+  const strong=['kind','index','name','move','option','duration'].filter(f=>cols[f]!==undefined).length;
+  if(!((cols.kind!==undefined||cols.index!==undefined||cols.name!==undefined)&&strong>=3)) return null;
+  const pos=Object.values(cols);
+  return {cols, min:Math.min(...pos), max:Math.max(...pos)};
+}
+// A row can hold several tables side by side: split it at each "Item Kind" (or "Item Index") header cell.
+function detectHeaders(row){
+  const isA=(c,f)=>HEADER_ALIASES[f].includes(norm(row[c]));
+  let anchors=[]; for(let c=0;c<row.length;c++) if(isA(c,'kind')) anchors.push(c);
+  if(anchors.length<2){ anchors=[]; for(let c=0;c<row.length;c++) if(isA(c,'index')) anchors.push(c); }
+  if(anchors.length<2){ const h=detectHeaderIn(row,0,row.length-1); return h?[h]:[]; }
+  const out=[];
+  anchors.forEach((a,i)=>{ const h=detectHeaderIn(row, i===0?0:a, i+1<anchors.length?anchors[i+1]-1:row.length-1); if(h) out.push(h); });
+  return out;
+}
+
+// Label a table: a number just left of the header (the package / code ID), else the nearest text above it.
+function tableLabel(values, hr, h){
+  const left=cell(values[hr]||[], h.min-1);
+  if(/^\d{4,}$/.test(left.replace(/,/g,''))) return 'ID '+left;
+  for(let r=hr-1;r>=Math.max(0,hr-3);r--){
+    const row=values[r]||[];
+    for(let c=h.min;c<=h.max;c++){ const t=cell(row,c); if(t&&isNaN(Number(t))&&t.length>1) return t.length>40?t.slice(0,40)+'…':t; }
+  }
+  return '';
+}
+
+// Returns every item row found (flagged or not) so duplicates can be compared across tables.
+function scan(values){
+  const headers=[];                                  // {row, cols, min, max}
+  values.forEach((row,r)=>detectHeaders(row||[]).forEach(h=>headers.push(Object.assign(h,{row:r}))));
+  const rows=[]; let skipped=0;
+  headers.forEach(h=>{
+    const cols=h.cols, label=tableLabel(values,h.row,h);
+    let blank=0;
+    for(let r=h.row+1;r<values.length;r++){
+      // stop where another table's header overlaps these columns
+      if(headers.some(o=>o.row===r&&o.min<=h.max&&o.max>=h.min)) break;
+      const row=values[r]||[];
+      const kind=cell(row,cols.kind), index=cell(row,cols.index), name=cell(row,cols.name);
+      if(!kind&&!index&&!name){ if(++blank>=2) break; continue; }
+      blank=0;
+      // Words in the ID columns (e.g. CONDITIONS, CODE ACTIVATION DATE, Prize, Master Code) = a
+      // conditions/code block under the item table, not an item: the item table ends here.
+      const isText=v=>v!==''&&toNum(v)===null&&!isPlaceholder(v);
+      if(isText(kind)||isText(index)) break;
+      // "-" in the ID columns = not an in-game item (e.g. Limited Orb, web currency): skip it.
+      const kindPh=!kind||isPlaceholder(kind), idxPh=!index||isPlaceholder(index);
+      // Banner / note row inside a table (e.g. "ทุกครั้งที่ซื้อจะได้ …"): text only, every item column empty.
+      if(!kind&&!index&&!cell(row,cols.option)&&!cell(row,cols.duration)&&!cell(row,cols.move)){ continue; }
+      const isOrb=LIMITED_ORB.some(p=>p.test(name));
+      // Limited Orb has no Item Kind / Index: sheets write "-" or leave them blank. Both mean the same.
+      if(name && kindPh && idxPh && (isOrb||isPlaceholder(kind)||isPlaceholder(index))){
+        if(!isOrb){ skipped++; continue; }
+        // Limited Orb is web currency: no Item Kind / Index, so only this flag applies.
+        rows.push({ r, c:(cols.name!==undefined?cols.name:(cols.kind!==undefined?cols.kind:cols.index)),
+          headerRow:h.row, hc:h.min, moveC:cols.move, calc:null, table:label, kind:'',index:'',
+          option:cell(row,cols.option), name, flags:['LIMITED ORB'],
+          notes:[N('orbOnly')],
+          mv:'', mvText:'', durRaw:'', duration:(isPlaceholder(cell(row,cols.durText))?'':cell(row,cols.durText))||'—', moveRaw:cell(row,cols.move)||'—' });
+        continue;
+      }
+
+      const option=cell(row,cols.option), duration=cell(row,cols.duration), durText=cell(row,cols.durText), move=cell(row,cols.move);
+      const flags=[], notes=[];
+      const idxNum=toNum(index), kindNum=toNum(kind);
+
+      if(isOrb){ flags.push('LIMITED ORB'); notes.push(N('orb')); }
+      const fgName=kwPatterns.some(p=>p.test(name)), fgIdx=idxNum!==null&&fgIndexes.includes(idxNum);
+      if(fgName||fgIdx){
+        flags.push('FORCE GEM');
+        notes.push(fgName&&fgIdx?N('fgBoth'):fgName?N('fgName'):N('fgIdx',{idx:idxNum}));
+      }
+
+      const mv=yesNo(move);
+      const calc=(kindNum!==null&&idxNum!==null)?kindNum===idxNum:null;
+      // Item Kind vs Item Index decides tradability; the Itemmove text is only trusted when IDs aren't numbers.
+      if(calc===true){ flags.push('TRADABLE'); notes.push(N('trade',{kind})); }
+      else if(calc===null&&mv==='YES'){ flags.push('TRADABLE'); notes.push(N('tradeCell',{move})); }
+      if(mv&&calc!==null&&((mv==='YES')!==calc)){
+        flags.push('MISMATCH');
+        notes.push(calc?N('mmYes',{move}):N('mmNo',{move,kind,index}));
+      }
+
+      if(cols.duration!==undefined){
+        const d=toNum(duration);
+        if(duration===''){flags.push('DURATION');notes.push(N('durEmpty'));}
+        else if(d===null||d!==Math.floor(d)||d<0||d>29){flags.push('DURATION');notes.push(N('durBad',{d:duration}));}
+      }
+      // Permanent: DurationIndex 0, or ระยะเวลา says ถาวร / permanent
+      const dNum=toNum(duration), txtPerm=/ถาวร|permanent/i.test(durText);
+      if(dNum===0||(cols.duration===undefined&&txtPerm)){ flags.push('PERMANENT'); notes.push(dNum===0?N('perm0'):N('permText',{t:durText})); }
+      // DurationIndex vs the ระยะเวลา text typed next to it
+      if(dNum!==null&&DURATION_TEXT[dNum]!==undefined&&durText&&!/ไม่ถูกต้อง|invalid|#/i.test(durText)){
+        const want=normDur(DURATION_TEXT[dNum]), got=normDur(durText);
+        if(got&&want!==got){ if(!flags.includes('DURATION'))flags.push('DURATION'); notes.push(N('durText',{d:dNum,want:DURATION_TEXT[dNum],got:durText})); }
+      }
+      if(/ไม่ถูกต้อง|invalid|#n\/a|#value|#ref|#error/i.test(durText)){ if(!flags.includes('DURATION'))flags.push('DURATION'); notes.push(N('durErr',{t:durText})); }
+
+      if(name&&(kindPh||(cols.index!==undefined&&idxPh))){flags.push('MISSING');notes.push(N('missId'));}
+      else if(!name&&(kind||index)&&cols.name!==undefined){flags.push('MISSING');notes.push(N('missName'));}
+
+      const dn=toNum(duration);
+      rows.push({
+        r, c:(cols.name!==undefined?cols.name:(cols.kind!==undefined?cols.kind:cols.index)),
+        headerRow:h.row, hc:h.min, moveC:cols.move, calc, table:label, kind,index,option,name,flags,notes, mv:mv||(calc===null?'':(calc?'YES':'NO')), mvText:mv,
+        durRaw:duration,
+        duration: duration===''?'—':duration+(durText?' · '+durText:(dn!==null&&DURATION_TEXT[dn]?' · '+DURATION_TEXT[dn]:'')),
+        moveRaw:move||'—', moveFix:(calc!==null&&mv&&(mv==='YES')!==calc)?(calc?'yes':'no'):'', moveById:(!move&&calc!==null)?(calc?'yes':'no'):''
+      });
+    }
+  });
+  return {tables:headers.length,rows,skipped};
+}
+
+// Same Item Kind + Item Index with different Itemmove / DurationIndex somewhere else = worth a look.
+function crossCheck(all){
+  const byItem=new Map();
+  all.forEach(x=>{ if(!x.kind||!x.index) return; const k=x.kind.replace(/,/g,'')+'|'+x.index.replace(/,/g,''); (byItem.get(k)||byItem.set(k,[]).get(k)).push(x); });
+  const where=(list,field,v)=>{const multi=new Set(list.map(x=>x.tab)).size>1;const m=list.filter(x=>x[field]===v).map(x=>(multi?x.tab+'!':'')+x.ref);return m.slice(0,3).join(', ')+(m.length>3?' +'+(m.length-3):'');};
+  byItem.forEach(list=>{
+    if(list.length<2) return;
+    const durs=[...new Set(list.map(x=>x.durRaw).filter(v=>v!==''))];
+    if(durs.length>1) list.forEach(x=>{
+      const others=durs.filter(d=>d!==x.durRaw);
+      if(!x.flags.includes('CROSS')) x.flags.push('CROSS');
+      x.notes.push(N('crossDur',{d:x.durRaw,others:others.map(d=>({v:d,w:where(list,'durRaw',d)}))}));
+    });
+    if(list[0].calc===null){
+      const moves=[...new Set(list.map(x=>x.mvText).filter(Boolean))];
+      if(moves.length>1) list.forEach(x=>{
+        if(!x.flags.includes('CROSS')) x.flags.push('CROSS');
+        x.notes.push(N('crossMove',{m:x.mvText,others:moves.filter(m=>m!==x.mvText).map(m=>({v:m,w:where(list,'mvText',m)}))}));
+      });
+    }
+  });
+}
+
+// ------------------------------------------------ inputs
+function addSource(label, sheets, example){
+  if(!example) sources = sources.filter(s=>!s.example);
+  // Count item tables per tab; tabs that have some are ticked, tabs with none start unticked.
+  sheets.forEach(sh=>{ sh.tables=scan(sh.values).tables; sh.on=sh.tables>0; });
+  if(!sheets.some(sh=>sh.on)) sheets.forEach(sh=>sh.on=true);
+  sources.push({id:nextId++, label, example:!!example, sheets});
+  hideErr(); render();
+}
+function showErr(msg){const b=document.getElementById('errBox');b.textContent=msg;b.hidden=false;}
+function hideErr(){document.getElementById('errBox').hidden=true;}
+
+// Paste: prefer the HTML table Google Sheets puts on the clipboard (keeps merged-cell positions).
+function parseHtmlTable(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const table=doc.querySelector('table'); if(!table) return null;
+  const grid=[], taken=[];
+  [...table.rows].forEach((tr,ri)=>{
+    grid[ri]=grid[ri]||[]; let c=0;
+    [...tr.cells].forEach(td=>{
+      while(taken[ri]&&taken[ri][c]) c++;
+      const cs=Math.max(1,+td.colSpan||1), rs=Math.max(1,+td.rowSpan||1);
+      const text=td.innerText!==undefined&&td.innerText!==''?td.innerText:td.textContent;
+      grid[ri][c]=(text||'').replace(/ /g,' ').trim();
+      for(let dr=0;dr<rs;dr++)for(let dc=0;dc<cs;dc++){
+        if(dr===0&&dc===0) continue;
+        taken[ri+dr]=taken[ri+dr]||[]; taken[ri+dr][c+dc]=true;
+        grid[ri+dr]=grid[ri+dr]||[]; if(grid[ri+dr][c+dc]===undefined) grid[ri+dr][c+dc]='';
+      }
+      c+=cs;
+    });
+  });
+  return grid.map(r=>Array.from(r||[],v=>v==null?'':v));
+}
+function parseTsv(text){
+  const rows=[]; let row=[], f='', q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=ch; }
+    else if(ch==='"'&&f==='') q=true;
+    else if(ch==='\t'){row.push(f);f='';}
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(f);rows.push(row);row=[];f=''; }
+    else f+=ch;
+  }
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows;
+}
+let pasteCount=0;
+function handlePaste(e){
+  const cd=e.clipboardData; if(!cd) return;
+  e.preventDefault();
+  const html=cd.getData('text/html'), text=cd.getData('text/plain');
+  let values=html?parseHtmlTable(html):null;
+  if(!values||!values.length) values=text?parseTsv(text):null;
+  if(!values||!values.length){showErr(t('err.clip'));return;}
+  pasteCount++;
+  addSource(t('src.pasted',{n:pasteCount}),[{name:t('src.pasted',{n:pasteCount}),values,r0:0,c0:0}]);
+}
+const pasteZone=document.getElementById('pasteZone');
+document.addEventListener('paste',e=>{ if(e.target.closest&&e.target.closest('textarea,input')) return; handlePaste(e); });
+
+function readFile(file){
+  if(typeof XLSX==='undefined'){showErr(t('err.lib'));return;}
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(fr.result),{type:'array'});
+      const sheets=wb.SheetNames.map(n=>{
+        const ws=wb.Sheets[n]; if(!ws['!ref']) return null;
+        const rg=XLSX.utils.decode_range(ws['!ref']);
+        const values=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:true});
+        return {name:n,values,r0:rg.s.r,c0:rg.s.c};
+      }).filter(Boolean);
+      addSource(file.name,sheets);
+    }catch(err){ showErr(t('err.read',{f:file.name,e:err.message})); }
+  };
+  fr.readAsArrayBuffer(file);
+}
+const fileInput=document.getElementById('fileInput'), dropZone=document.getElementById('dropZone');
+document.getElementById('pickBtn').onclick=()=>fileInput.click();
+fileInput.onchange=()=>{[...fileInput.files].forEach(readFile);fileInput.value='';};
+dropZone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();}});
+['dragenter','dragover'].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();dropZone.classList.add('hot');}));
+['dragleave','drop'].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();if(t==='drop'||!e.relatedTarget)dropZone.classList.remove('hot');}));
+document.addEventListener('drop',e=>{ [...(e.dataTransfer?.files||[])].forEach(readFile); });
+
+// ------------------------------------------------ render
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+let view = load('ic.view') || 'unique';
+let lastShown = {view:'unique',items:[],multiTab:false};
+let ignored = new Set(load('ic.ignored') || []);
+let showIgnored = false;
+const itemKey = x => [x.kind,x.index,x.option,x.durRaw,x.mv].map(v=>String(v).replace(/,/g,'').toLowerCase()).join('|');
+const topFlag = flags => flags.slice().sort((a,b)=>ORDER[a]-ORDER[b])[0];
+
+function groupWhy(g,multiTab){
+  const refs=g.rows.map(x=>(multiTab?x.tab+'!':'')+x.moveRef).filter(Boolean);
+  return [...g.notes.values()].map(n=>noteText(n,cellsText(refs))).join('. ');
+}
+function rowWhy(x){ return x.notes.map(n=>noteText(n,cellsText([x.moveRef]))).join('. '); }
+function render(){
+  // sources bar
+  const sb=document.getElementById('sources');
+  sb.innerHTML = sources.length
+    ? sources.map(s=>{
+        const n=s.sheets.length, on=s.sheets.filter(t=>t.on).length;
+        let h='<div class="srcrow"><span class="lbl">'+t('src.checking')+'</span><span class="src'+(s.example?' example':'')+'">'+esc(s.label)+' · '+(n>1?t('src.ofTabs',{on,n}):t('src.oneTab'))+'<button type="button" aria-label="'+esc(t('src.remove',{x:s.label}))+'" data-rm="'+s.id+'">×</button></span></div>';
+        if(n>1) h+='<div class="tabpick" role="group" aria-label="'+esc(t('src.tabs')+' '+s.label)+'"><span class="lbl">'+t('src.tabs')+'</span>'
+          + s.sheets.map((tb,i)=>'<button type="button" class="tabchip'+(tb.tables?'':' notable')+'" aria-pressed="'+tb.on+'" data-src="'+s.id+'" data-tab="'+i+'" title="'+esc(tb.tables?t('src.tabTitle',{n:tb.tables}):t('src.noTable'))+'">'+esc(tb.name)+'<small>'+(tb.tables?tb.tables:'—')+'</small></button>').join('')
+          + '<button type="button" class="btn small" data-all="'+s.id+'">'+t('src.all')+'</button><button type="button" class="btn small" data-none="'+s.id+'">'+t('src.none')+'</button></div>';
+        return h;
+      }).join('')+(sources.length>1?'<div class="srcrow"><button class="btn small" type="button" id="clearAll">'+t('src.clearAll')+'</button></div>':'')
+    : '';
+  const srcById=id=>sources.find(x=>x.id==id);
+  sb.querySelectorAll('.tabchip').forEach(b=>b.onclick=()=>{const tb=srcById(b.dataset.src).sheets[+b.dataset.tab]; tb.on=!tb.on; render();});
+  sb.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{srcById(b.dataset.all).sheets.forEach(tb=>tb.on=true); render();});
+  sb.querySelectorAll('[data-none]').forEach(b=>b.onclick=()=>{srcById(b.dataset.none).sheets.forEach(tb=>tb.on=false); render();});
+  sb.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{sources=sources.filter(s=>s.id!=b.dataset.rm);render();});
+  const ca=document.getElementById('clearAll'); if(ca) ca.onclick=()=>{sources=[];render();};
+
+  // scan everything
+  let all=[], tables=0, skipped=0; const tabNames=new Set();
+  sources.forEach(src=>src.sheets.filter(sh=>sh.on).forEach(sh=>{
+    const res=scan(sh.values); tables+=res.tables; skipped+=res.skipped;
+    res.rows.forEach(x=>{ tabNames.add(sh.name); all.push(Object.assign(x,{tab:sh.name,ref:colLetter(x.c+sh.c0+1)+(x.r+sh.r0+1),hdr:colLetter(x.hc+sh.c0+1)+(x.headerRow+sh.r0+1),moveRef:x.moveC!==undefined?colLetter(x.moveC+sh.c0+1)+(x.r+sh.r0+1):''})); });
+  }));
+  crossCheck(all);
+  const multiTab = tabNames.size>1;
+  const flaggedRows = all.filter(x=>x.flags.length);
+
+  // group identical items (same Kind, Index, Option, Duration, Itemmove)
+  const groups=new Map();
+  flaggedRows.forEach(x=>{
+    const k=itemKey(x);
+    if(!groups.has(k)) groups.set(k,{key:k,first:x,rows:[],flags:new Set(),notes:new Map(),names:new Set()});
+    const g=groups.get(k); g.rows.push(x); x.flags.forEach(f=>g.flags.add(f)); x.notes.forEach(n=>g.notes.set(JSON.stringify(n),n)); if(x.name) g.names.add(x.name);
+  });
+  const groupList=[...groups.values()].map(g=>Object.assign(g,{flags:[...g.flags],ignored:ignored.has(g.key)}));
+  const ignoredCount=groupList.filter(g=>g.ignored).length;
+  const liveGroups=groupList.filter(g=>!g.ignored);
+  const liveRows=flaggedRows.filter(x=>!ignored.has(itemKey(x)));
+
+  // summary chips (unique items, with row count underneath)
+  const sum=document.getElementById('summary');
+  sum.innerHTML = FLAGS.map(f=>{
+    const u=liveGroups.filter(g=>g.flags.includes(f.key)).length, n=liveRows.filter(x=>x.flags.includes(f.key)).length;
+    return '<button type="button" class="chip '+f.cls+'" data-flag="'+f.key+'" aria-pressed="'+active.has(f.key)+'"><b>'+(view==='unique'?u:n)+'</b>'+flagLabel(f.key)
+      +(view==='unique'&&n>u?'<small>'+t('chip.rows',{n})+'</small>':'')+'</button>';
+  }).join('')
+    + '<span class="meta">'+t('meta',{t:tables,r:all.length})+(skipped?t('meta.skip',{n:skipped}):'')+'</span>';
+  sum.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.flag; active.has(k)?active.delete(k):active.add(k); if(!active.size) FLAGS.forEach(f=>active.add(f.key)); store('ic.active',[...active]); store('ic.known',FLAGS.map(f=>f.key)); render();});
+
+  // toolbar
+  document.getElementById('viewUnique').setAttribute('aria-pressed',view==='unique');
+  document.getElementById('viewRows').setAttribute('aria-pressed',view==='rows');
+  const ib=document.getElementById('ignoredToggle');
+  ib.hidden=!ignoredCount; ib.textContent=t(showIgnored?'ign.hide':'ign.show',{n:ignoredCount});
+  const cl=document.getElementById('clearIgnored'); cl.hidden=!ignoredCount;
+
+  const thead=document.getElementById('thead'), tb=document.getElementById('tbody'), em=document.getElementById('emptyMsg');
+  let shownCount=0;
+  if(view==='unique'){
+    thead.innerHTML='<tr>'+['flag','name','kind','index','option','dur','move','found','why'].map(k=>'<th>'+t('th.'+k)+'</th>').join('')+'<th></th></tr>';
+    const shown=groupList.filter(g=>(showIgnored||!g.ignored)&&g.flags.some(k=>active.has(k)))
+      .sort((a,b)=>a.ignored-b.ignored||ORDER[topFlag(a.flags)]-ORDER[topFlag(b.flags)]||a.first.tab.localeCompare(b.first.tab)||a.first.r-b.first.r);
+    shownCount=shown.length; lastShown={view:'unique',items:shown,multiTab};
+    tb.innerHTML=shown.map(g=>{
+      const f=g.first, tablesIn=new Set(g.rows.map(x=>x.tab+'|'+x.hdr)).size;
+      const names=[...g.names];
+      const refs=g.rows.map(x=>'<span class="ref" title="'+esc((x.table?x.table+' · ':'')+t('tableAt',{x:x.hdr}))+'">'+(multiTab?esc(x.tab)+'!':'')+x.ref+'</span>').join('');
+      return '<tr class="row-'+CLS[topFlag(g.flags)]+(g.ignored?' is-ignored':'')+'">'
+        +'<td>'+g.flags.sort((a,b)=>ORDER[a]-ORDER[b]).map(k=>'<span class="pill '+CLS[k]+'">'+flagLabel(k)+'</span>').join('')+'</td>'
+        +'<td class="name">'+esc(names[0]||'—')+(names.length>1?'<div class="alt">'+esc(t('alt',{x:names.slice(1).join(', ')}))+'</div>':'')+'</td>'
+        +'<td class="num">'+esc(f.kind||'—')+'</td><td class="num">'+esc(f.index||'—')+'</td><td class="num">'+esc(f.option||'—')+'</td>'
+        +'<td class="num">'+esc(f.duration)+'</td><td>'+esc(moveText(f))+'</td>'
+        +'<td class="found"><div class="count">'+g.rows.length+'× <span>'+t('found.in',{n:tablesIn})+'</span></div><div class="refs">'+refs+'</div></td>'
+        +'<td class="why">'+esc(groupWhy(g,multiTab))+'</td>'
+        +'<td><button type="button" class="btn small" data-ign="'+esc(g.key)+'">'+t(g.ignored?'ign.restore':'ign.btn')+'</button></td></tr>';
+    }).join('');
+  } else {
+    thead.innerHTML='<tr>'+['flag','tab','cell','table','kind','index','option','dur','move','name','why'].map(k=>'<th>'+t('th.'+k)+'</th>').join('')+'</tr>';
+    const shown=flaggedRows.filter(x=>(showIgnored||!ignored.has(itemKey(x)))&&x.flags.some(k=>active.has(k)))
+      .sort((a,b)=>ORDER[topFlag(a.flags)]-ORDER[topFlag(b.flags)]||a.tab.localeCompare(b.tab)||a.r-b.r);
+    shownCount=shown.length; lastShown={view:'rows',items:shown,multiTab};
+    tb.innerHTML=shown.map(x=>'<tr class="row-'+CLS[topFlag(x.flags)]+(ignored.has(itemKey(x))?' is-ignored':'')+'"><td>'+x.flags.map(k=>'<span class="pill '+CLS[k]+'">'+flagLabel(k)+'</span>').join('')+'</td>'
+      +'<td class="tab">'+esc(x.tab)+'</td><td class="cell">'+x.ref+'</td><td class="tab">'+esc(x.table||x.hdr)+'</td>'
+      +'<td class="num">'+esc(x.kind||'—')+'</td><td class="num">'+esc(x.index||'—')+'</td><td class="num">'+esc(x.option||'—')+'</td>'
+      +'<td class="num">'+esc(x.duration)+'</td><td>'+esc(moveText(x))+'</td><td class="name">'+esc(x.name||'—')+'</td><td class="why">'+esc(rowWhy(x))+'</td></tr>').join('');
+  }
+  tb.querySelectorAll('[data-ign]').forEach(b=>b.onclick=()=>{const k=b.dataset.ign; ignored.has(k)?ignored.delete(k):ignored.add(k); store('ic.ignored',[...ignored]); render();});
+
+  em.className='empty';
+  if(!sources.length){em.textContent=t('empty.start');em.hidden=false;}
+  else if(!sources.some(s=>s.sheets.some(t=>t.on))){em.textContent=t('empty.noTab');em.hidden=false;}
+  else if(!tables){em.textContent=t('empty.noTable');em.hidden=false;}
+  else if(!flaggedRows.length){em.textContent=t('empty.ok',{n:all.length});em.className='empty ok';em.hidden=false;}
+  else if(!shownCount){em.textContent=t(ignoredCount&&!showIgnored?'empty.ignored':'empty.filter');em.hidden=false;}
+  else em.hidden=true;
+}
+// ------------------------------------------------ export
+function exportRows(){
+  const L=lastShown, flagText=f=>f.slice().sort((a,b)=>ORDER[a]-ORDER[b]).map(flagLabel).join(' + ');
+  const head=t('csv.head');
+  const out=[head];
+  L.items.forEach(it=>{
+    if(L.view==='unique'){
+      const f=it.first, tabs=[...new Set(it.rows.map(x=>x.tab))];
+      const refs=it.rows.map(x=>(L.multiTab?x.tab+'!':'')+x.ref).join(' ');
+      out.push([flagText(it.flags),[...it.names].join(' / '),f.kind,f.index,f.option,f.durRaw,f.duration.replace(/^.*? · /,''),moveText(f),
+        it.rows.length,new Set(it.rows.map(x=>x.tab+'|'+x.hdr)).size,tabs.join(' / '),refs,
+        [...new Set(it.rows.map(x=>x.table||x.hdr))].join(' / '),
+        groupWhy(it,L.multiTab)]);
+    } else {
+      out.push([flagText(it.flags),it.name,it.kind,it.index,it.option,it.durRaw,it.duration.replace(/^.*? · /,''),moveText(it),
+        1,1,it.tab,it.ref,it.table||it.hdr,rowWhy(it)]);
+    }
+  });
+  return out;
+}
+// Neutralise spreadsheet formulas in text cells (=, +, @, or - followed by a non-number)
+const safe=v=>{ const s=String(v==null?'':v); return /^[=+@\t\r]/.test(s)||/^-(?![\d.])./.test(s) ? "'"+s : s; };
+function toCsv(rows){ return '﻿'+rows.map(r=>r.map(v=>{const s=safe(v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n')+'\r\n'; }
+function toTsv(rows){ return rows.map(r=>r.map(v=>safe(v).replace(/[\t\r\n]+/g,' ')).join('\t')).join('\n'); }
+function exportName(){
+  const f=sources.filter(s=>!s.example)[0]; let src=f?f.label.replace(/\.(xlsx|xls|csv|ods)$/i,''):'item-check';
+  if(f&&f.sheets.length>1){ const on=f.sheets.filter(t=>t.on); if(on.length===1) src+=' - '+on[0].name; }
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return ('Item Check - '+src).replace(/[\\/:*?"<>|]+/g,' ').slice(0,150)+' - '+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+(lastShown.view==='rows'?' (rows)':'')+'.csv';
+}
+function say(msg){ const m=document.getElementById('exportMsg'); m.textContent=msg; clearTimeout(say.t); say.t=setTimeout(()=>m.textContent='',6000); }
+document.getElementById('exportCsv').onclick=async()=>{
+  const rows=exportRows(); if(rows.length<2){ say(t('msg.noRows')); return; }
+  const csv=toCsv(rows), name=exportName();
+  if(window.claude&&window.claude.use){                       // published page: platform download
+    const dl=await window.claude.use('downloads');
+    if(!dl){ say(t('msg.noDl')); return; }
+    try{ await dl.save({filename:name,data:csv}); say(t('msg.saved',{n:rows.length-1})); }
+    catch(e){ say(e&&e.code==='declined'?t('msg.cancel'):t('msg.dlFail',{c:(e&&e.code)||'error'})); }
+    return;
+  }
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));   // offline file: normal browser download
+  const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000); say(t('msg.downloaded',{n:rows.length-1}));
+};
+document.getElementById('copyTsv').onclick=async()=>{
+  const rows=exportRows(); if(rows.length<2){ say(t('msg.noCopy')); return; }
+  const tsv=toTsv(rows);
+  try{ await navigator.clipboard.writeText(tsv); say(t('msg.copied',{n:rows.length-1})); }
+  catch(e){
+    const ta=document.createElement('textarea'); ta.value=tsv; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+    let ok=false; try{ ok=document.execCommand('copy'); }catch(_){}
+    ta.remove(); say(ok?t('msg.copied',{n:rows.length-1}):t('msg.copyBlocked'));
+  }
+};
+document.getElementById('viewUnique').onclick=()=>{view='unique';store('ic.view',view);render();};
+document.getElementById('viewRows').onclick=()=>{view='rows';store('ic.view',view);render();};
+document.getElementById('ignoredToggle').onclick=()=>{showIgnored=!showIgnored;render();};
+document.getElementById('clearIgnored').onclick=()=>{ignored=new Set();store('ic.ignored',[]);render();};
+
+initSettings();
+applyStatic();
+render();
+</script>
+
+</body>
+</html>
